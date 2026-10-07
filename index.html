@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Subway Dash — Hand Gesture Runner</title>
+<link rel="stylesheet" href="style.css" />
+<script type="importmap">
+{
+  "imports": {
+    "@mediapipe/tasks-vision": "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/+esm"
+  }
+}
+</script>
+</head>
+<body>
+<div id="app">
+  <div id="game-wrap">
+    <canvas id="game" width="480" height="720"></canvas>
+
+    <div id="hud">
+      <div class="hud-left">
+        <div id="score">0</div>
+        <div id="coins">🪙 0</div>
+        <div id="dist">0m</div>
+      </div>
+      <div class="hud-right">
+        <div id="speed">1x</div>
+        <div id="gesture-badge">⌨️ KEYBOARD</div>
+        <button id="btn-mute" title="Mute (M)">🔊</button>
+      </div>
+    </div>
+    <div id="powerups"></div>
+
+    <div id="gesture-toast"></div>
+
+    <div id="menu" class="overlay">
+      <h1>SUBWAY<br/><span>DASH</span></h1>
+      <p class="sub">Endless runner controlled by your hand ✋</p>
+      <div class="gesture-help">
+        <div><b>⬅️ Left</b><span>Hand to left / Swipe left</span></div>
+        <div><b>➡️ Right</b><span>Hand to right / Swipe right</span></div>
+        <div><b>⬆️ Jump</b><span>Open palm 🖐️ / Swipe up</span></div>
+        <div><b>⬇️ Slide</b><span>Fist ✊ / Swipe down</span></div>
+        <div class="kb"><b>⌨️ Keyboard</b><span>← → / ↑ jump / ↓ slide &nbsp;•&nbsp; P pause &nbsp;•&nbsp; M mute</span></div>
+        <div class="kb"><b>⭐ Power-ups</b><span>🧲 Magnet grabs coins &nbsp;•&nbsp; 🛡 Shield saves you once &nbsp;•&nbsp; ✨ 2x score</span></div>
+      </div>
+      <div class="btn-row">
+        <button id="btn-camera" class="primary">📷 Enable Camera & Play</button>
+        <button id="btn-keyboard">Play with Keyboard</button>
+      </div>
+      <p class="hint">Camera runs 100% locally in your browser (MediaPipe). No video is uploaded.<br/>Use <b>localhost or HTTPS</b> or camera will be blocked.</p>
+    </div>
+
+    <div id="gameover" class="overlay hidden">
+      <h1>GAME OVER</h1>
+      <div id="final-score">Score: 0</div>
+      <div id="final-coins">Coins: 0</div>
+      <div id="best">Best: 0</div>
+      <button id="btn-retry" class="primary">↻ Run Again (R)</button>
+      <button id="btn-menu">Menu</button>
+    </div>
+
+    <div id="countdown" class="hidden">3</div>
+
+    <div id="touch">
+      <button data-act="left">◀</button>
+      <button data-act="down">▼</button>
+      <button data-act="up">▲</button>
+      <button data-act="right">▶</button>
+    </div>
+
+    <div id="paused" class="overlay hidden">
+      <h1>PAUSED</h1>
+      <button id="btn-resume" class="primary">Resume (P)</button>
+    </div>
+  </div>
+
+  <div id="side">
+    <h3>📖 How to Play <span class="tag">beginners start here</span></h3>
+    <ol id="howto">
+      <li><b>Goal:</b> survive as long as you can. You run forward automatically — just dodge!</li>
+      <li><b>Move:</b> switch lanes ⬅️ ➡️ to avoid trains.</li>
+      <li><b>Jump</b> ⬆️ over <span class="sw orange"></span> orange barriers.</li>
+      <li><b>Slide</b> ⬇️ under <span class="sw blue"></span> blue gates.</li>
+      <li><b>Trains</b> <span class="sw train"></span> are tall — you <u>cannot</u> jump them, change lanes!</li>
+      <li>Grab 🪙 coins & ⭐ power-ups: 🧲 magnet, 🛡 shield, ✨ 2x score.</li>
+      <li><b>Start easy:</b> click <b>Play with Keyboard</b> first (arrows + Space). Add the camera once you're comfortable.</li>
+    </ol>
+    <h3>✋ Hand Tracking</h3>
+    <div id="cam-wrap">
+      <video id="cam" playsinline muted></video>
+      <canvas id="hand-overlay" width="320" height="240"></canvas>
+    </div>
+    <div id="gesture-status">Camera off — keyboard mode</div>
+    <div id="lanes-hint">
+      <div class="zone">⬅ LEFT</div>
+      <div class="zone">CENTER</div>
+      <div class="zone">RIGHT ➡</div>
+    </div>
+    <div class="controls">
+      <label>Swipe sensitivity <input id="sens" type="range" min="0.08" max="0.3" step="0.01" value="0.15" /></label>
+      <label><input id="chk-pos" type="checkbox" checked /> Lane follow by hand position</label>
+      <button id="btn-cam-toggle">📷 Start Camera</button>
+    </div>
+    <details>
+      <summary>Troubleshooting</summary>
+      <ul>
+        <li>Open via <code>http://localhost:8000</code>, not <code>file://</code> — camera is blocked on file URLs.</li>
+        <li>Allow camera permission in the browser.</li>
+        <li>Keep one hand centered, good lighting, plain background.</li>
+        <li>If tracking is jittery, lower swipe sensitivity (smaller = more sensitive).</li>
+      </ul>
+    </details>
+  </div>
+</div>
+<script src="game.js"></script>
+<script>
+window.addEventListener('error', function (e) {
+  var st = document.getElementById('gesture-status');
+  if (st && /import|module|CORS|gesture|mediapipe/i.test(String(e.message || '') + ' ' + (e.filename || ''))) {
+    st.innerHTML = '⚠️ Script failed to load (' + (e.message || 'unknown') + '). If you opened via file://, use <b>start_game.bat</b> or <code>python -m http.server 8000</code> → <b>http://localhost:8000</b>.';
+  }
+});
+</script>
+</body>
+</html>

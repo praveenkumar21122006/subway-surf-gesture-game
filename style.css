@@ -1,0 +1,101 @@
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: #0b1020; color: #eef2ff;
+  font-family: 'Segoe UI', system-ui, Arial, sans-serif;
+  display: flex; justify-content: center; min-height: 100vh;
+}
+#app { display: flex; gap: 18px; padding: 16px; flex-wrap: wrap; justify-content: center; }
+#game-wrap { position: relative; width: 480px; max-width: 94vw; }
+#game {
+  width: 100%; height: auto; display: block; border-radius: 14px;
+  background: #111; box-shadow: 0 12px 60px rgba(0,0,0,.6);
+  touch-action: none;
+}
+#hud {
+  position: absolute; top: 10px; left: 10px; right: 10px;
+  display: flex; justify-content: space-between; pointer-events: none;
+}
+.hud-left, .hud-right { display: flex; gap: 8px; align-items: center; }
+#score {
+  font-size: 28px; font-weight: 800; background: rgba(0,0,0,.55);
+  padding: 2px 14px; border-radius: 10px;
+}
+#coins, #speed, #gesture-badge, #dist {
+  background: rgba(0,0,0,.55); padding: 6px 10px; border-radius: 10px;
+  font-weight: 700; font-size: 14px;
+}
+#btn-mute { pointer-events: auto; padding: 6px 10px; font-size: 14px; }
+#powerups {
+  position: absolute; top: 56px; left: 10px; display: flex; gap: 6px;
+  pointer-events: none;
+}
+.pu { font-size: 13px; font-weight: 800; padding: 4px 10px; border-radius: 20px; }
+.pu.magnet { background: #1d4ed8; }
+.pu.mult { background: #7e22ce; }
+.pu.shield { background: #15803d; }
+#countdown {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  font-size: 110px; font-weight: 900; color: #facc15;
+  text-shadow: 0 6px 30px rgba(0,0,0,.8); pointer-events: none;
+}
+#countdown.hidden { display: none; }
+#touch {
+  position: absolute; bottom: 12px; left: 0; right: 0;
+  display: none; justify-content: space-between; padding: 0 14px;
+  pointer-events: none;
+}
+#touch button {
+  pointer-events: auto; width: 62px; height: 62px; border-radius: 50%;
+  font-size: 22px; background: rgba(255,255,255,.16);
+  border: 2px solid rgba(255,255,255,.35); backdrop-filter: blur(2px);
+}
+@media (pointer: coarse) { #touch { display: flex; } }
+#gesture-badge.live { background: #16a34a; }
+#gesture-toast {
+  position: absolute; top: 64px; left: 50%; transform: translateX(-50%);
+  font-size: 42px; opacity: 0; transition: opacity .2s; pointer-events: none;
+}
+.overlay {
+  position: absolute; inset: 0; border-radius: 14px;
+  background: rgba(5,8,20,.88); backdrop-filter: blur(4px);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  text-align: center; padding: 24px; gap: 10px;
+}
+.overlay.hidden { display: none; }
+.overlay h1 { margin: 0; font-size: 52px; letter-spacing: 2px; line-height: .95; }
+.overlay h1 span { color: #facc15; }
+.sub { opacity: .85; margin: 0 0 8px; }
+.gesture-help {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: 100%; max-width: 400px;
+}
+.gesture-help div { background: #1a2340; padding: 8px; border-radius: 10px; display: flex; flex-direction: column; }
+.gesture-help .kb { grid-column: span 2; }
+.gesture-help span { font-size: 12px; opacity: .8; }
+.btn-row { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+button {
+  background: #263056; color: #fff; border: 0; padding: 12px 16px;
+  border-radius: 10px; font-size: 15px; font-weight: 700; cursor: pointer;
+}
+button.primary { background: #facc15; color: #111; }
+button:hover { filter: brightness(1.12); }
+.hint { font-size: 12px; opacity: .65; max-width: 380px; }
+#final-score { font-size: 24px; font-weight: 800; }
+#side { width: 340px; max-width: 94vw; background: #131a33; border-radius: 14px; padding: 14px; height: fit-content; }
+#side h3 { margin: 4px 0 10px; }
+#side .tag { font-size: 11px; font-weight: 600; background: #16a34a; padding: 2px 8px; border-radius: 12px; vertical-align: middle; }
+#howto { margin: 0 0 14px; padding-left: 22px; font-size: 13px; display: flex; flex-direction: column; gap: 6px; }
+#howto b { color: #facc15; }
+.sw { display: inline-block; width: 12px; height: 12px; border-radius: 3px; vertical-align: baseline; }
+.sw.orange { background: #f97316; }
+.sw.blue { background: #38bdf8; }
+.sw.train { background: #dc2626; }
+#cam-wrap { position: relative; width: 100%; aspect-ratio: 4/3; background: #000; border-radius: 10px; overflow: hidden; }
+#cam { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+#hand-overlay { position: absolute; inset: 0; width: 100%; height: 100%; transform: scaleX(-1); }
+#gesture-status { margin-top: 8px; font-size: 13px; background: #0b1020; padding: 8px; border-radius: 8px; min-height: 54px; }
+#lanes-hint { display: flex; gap: 4px; margin-top: 8px; }
+#lanes-hint .zone { flex: 1; text-align: center; font-size: 11px; background: #1e2a55; padding: 6px 2px; border-radius: 6px; }
+#lanes-hint .zone.active { background: #16a34a; font-weight: 800; }
+.controls { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; font-size: 13px; }
+details { margin-top: 10px; font-size: 13px; opacity: .9; }
+code { background: #000; padding: 1px 5px; border-radius: 5px; }
