@@ -2,7 +2,7 @@
 
 A Subway Surfers–style 3-lane endless runner that you control with **hand gestures** (webcam + MediaPipe, 100% local) or keyboard/touch.
 
-**Live demo:** hosted on Vercel (HTTPS, so the camera works) — see repo About section for the URL.
+**Live demo:** https://subway-surf-gesture-game-gq542vnee.vercel.app (HTTPS, so the camera works) — open on desktop or mobile and allow camera access for gesture controls.
 
 ## Gestures
 
