@@ -197,11 +197,48 @@ export async function initGestures(cb, opts = {}) {
 
 export async function startCamera() {
   if (!landmarker) throw new Error('Gesture model not loaded yet');
-  const stream = await navigator.mediaDevices.getUserMedia({
-    video: { width: 640, height: 480, facingMode: 'user' },
-  });
+  if (!navigator.mediaDevices?.getUserMedia) {
+    throw Object.assign(new Error('This browser cannot access cameras here (needs HTTPS + Chrome/Edge).'), { name: 'NotSupportedError' });
+  }
+  // Fail fast with a clear message when there is no camera hardware at all
+  try {
+    const devs = await navigator.mediaDevices.enumerateDevices();
+    if (devs.length > 0 && !devs.some((d) => d.kind === 'videoinput')) {
+      throw Object.assign(new Error('No video input devices'), { name: 'NotFoundError' });
+    }
+  } catch (e) { if (e?.name === 'NotFoundError') throw e; /* ignore: try getUserMedia anyway */ }
+
+  // Try strict-ish constraints first, then relax — exact constraints throw
+  // OverconstrainedError ("not found") on cameras that can't match them.
+  const tries = [
+    { video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: 'user' }, audio: false },
+    { video: { width: { ideal: 640 }, height: { ideal: 480 } }, audio: false },
+    { video: true, audio: false },
+  ];
+  let stream = null, lastErr = null;
+  for (const c of tries) {
+    try { stream = await navigator.mediaDevices.getUserMedia(c); break; }
+    catch (e) {
+      lastErr = e;
+      if (e?.name === 'NotAllowedError' || e?.name === 'SecurityError') throw e; // permission: don't retry
+    }
+  }
+  if (!stream) throw lastErr || new Error('Camera unavailable');
   video.srcObject = stream;
-  await video.play();
+  try { await video.play(); }
+  catch (e) { if (video.paused) { stream.getTracks().forEach((t) => t.stop()); throw e; } }
+  // Wait until frames actually flow (catches "opened but frozen" cameras)
+  await new Promise((resolve, reject) => {
+    const t0 = performance.now();
+    (function wait() {
+      if (video.readyState >= 2 && video.videoWidth > 0) return resolve();
+      if (performance.now() - t0 > 8000) {
+        stream.getTracks().forEach((t) => t.stop());
+        return reject(Object.assign(new Error('Camera opened but no video frames arrived'), { name: 'NotReadableError' }));
+      }
+      requestAnimationFrame(wait);
+    })();
+  });
   running = true;
   loop();
   setStatus('✋ Tracking… show palm 🖐️ = jump, fist ✊ = slide, move hand ◀ ▶ to switch lanes');

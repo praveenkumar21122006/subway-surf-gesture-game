@@ -727,8 +727,10 @@ function gestureErrorMsg(err, where) {
   const name = err?.name || '', msg = String(err?.message || err);
   if (location.protocol === 'file:') return 'Blocked because you opened index.html directly (file://).\n\nFix: open http://localhost:8000 instead (double-click start_game.bat).';
   if (!window.isSecureContext) return 'Camera needs a secure context (localhost or HTTPS). You are on: ' + location.href;
-  if (name === 'NotAllowedError') return 'Camera permission denied. Click the camera icon in the address bar → Allow, then retry.';
-  if (name === 'NotFoundError' || name === 'OverconstrainedError') return 'No webcam found. Keyboard mode still works.';
+  if (name === 'NotAllowedError') return 'Camera permission denied.\nClick the camera/lock icon in the address bar → Allow this site, then retry.';
+  if (name === 'NotFoundError' || name === 'OverconstrainedError') return 'No usable camera found.\n• Desktop: plug in/enable the webcam.\n• Close apps using the camera (Zoom, Teams, Camera app).\n• Windows: Settings → Privacy & security → Camera → Camera access ON (+ Let desktop apps access your camera).\nKeyboard mode still works.';
+  if (name === 'NotReadableError') return 'Camera is busy or frozen (opened but no video).\nClose Zoom/Teams/Camera app and any other tab using the camera, then retry.\nKeyboard mode still works.';
+  if (name === 'NotSupportedError') return msg + '\nUse Chrome or Edge over HTTPS (the Vercel link is fine).';
   if (/failed to fetch|dynamically|import|network|cdn/i.test(msg)) return 'Could not download the hand-tracking model (internet/CDN blocked?). ' + msg;
   return 'Camera / hand tracking failed (' + where + '): ' + msg;
 }
