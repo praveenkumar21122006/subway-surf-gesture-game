@@ -749,17 +749,18 @@ document.getElementById('btn-camera').onclick = async (e) => {
   finally { btn.disabled = false; btn.textContent = '📷 Enable Camera & Play'; }
 };
 document.getElementById('btn-cam-toggle').onclick = async (e) => {
+  const btn = e.currentTarget; // capture now: e.currentTarget is null after await
   try {
     const g = await loadGestures();
-    if (g.isRunning()) { g.stopCamera(); e.currentTarget.textContent = '📷 Start Camera'; return; }
-    e.currentTarget.textContent = 'Loading…';
+    if (g.isRunning()) { g.stopCamera(); btn.textContent = '📷 Start Camera'; return; }
+    btn.textContent = 'Loading…';
     await g.initGestures({ onLeft: goLeft, onRight: goRight, onUp: doJump, onDown: doSlide });
     await g.startCamera();
     e.currentTarget.textContent = '⏹ Stop Camera';
     document.getElementById('gesture-badge').textContent = '✋ GESTURE LIVE';
     document.getElementById('gesture-badge').classList.add('live');
     if (state.mode !== 'playing') startGame();
-  } catch (err) { alert(gestureErrorMsg(err, 'toggle')); e.currentTarget.textContent = '📷 Start Camera'; }
+  } catch (err) { alert(gestureErrorMsg(err, 'toggle')); btn.textContent = '📷 Start Camera'; }
 };
 document.getElementById('sens').oninput = async (e) => { try { (await loadGestures()).setSensitivity(+e.target.value); } catch {} };
 document.getElementById('chk-pos').onchange = async (e) => { try { (await loadGestures()).setPosControl(e.target.checked); } catch {} };
