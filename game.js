@@ -4,6 +4,25 @@ async function loadGestures() {
   if (!G) G = await import('./gesture.js');
   return G;
 }
+function setGestureStatus(html) {
+  const st = document.getElementById('gesture-status');
+  if (st) st.innerHTML = html;
+}
+// Loads + initializes the hand model with a timeout so it can never hang silently.
+async function ensureGestures(ms = 60000) {
+  setGestureStatus('⏳ Downloading hand-tracking model… (one-time ~10MB, needs internet)');
+  const job = (async () => {
+    const g = await loadGestures();
+    await g.initGestures({ onLeft: goLeft, onRight: goRight, onUp: doJump, onDown: doSlide });
+    return g;
+  })();
+  const timeout = new Promise((_, rej) => setTimeout(() => rej(new Error(
+    'Timed out downloading the hand-tracking model (60s).\nCheck internet / VPN / ad-blocker (needs cdn.jsdelivr.net + storage.googleapis.com), then retry.\nKeyboard mode still works.'
+  )), ms));
+  const g = await Promise.race([job, timeout]);
+  job.catch(() => {}); // silence late failure if the timeout won first
+  return g;
+}
 
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
@@ -738,8 +757,7 @@ document.getElementById('btn-camera').onclick = async (e) => {
   const btn = e.currentTarget;
   btn.disabled = true; btn.textContent = 'Loading hand model…';
   try {
-    const g = await loadGestures();
-    await g.initGestures({ onLeft: goLeft, onRight: goRight, onUp: doJump, onDown: doSlide });
+    const g = await ensureGestures();
     await g.startCamera();
     document.getElementById('gesture-badge').textContent = '✋ GESTURE LIVE';
     document.getElementById('gesture-badge').classList.add('live');
@@ -751,12 +769,11 @@ document.getElementById('btn-camera').onclick = async (e) => {
 document.getElementById('btn-cam-toggle').onclick = async (e) => {
   const btn = e.currentTarget; // capture now: e.currentTarget is null after await
   try {
-    const g = await loadGestures();
-    if (g.isRunning()) { g.stopCamera(); btn.textContent = '📷 Start Camera'; return; }
+    if (G && G.isRunning()) { G.stopCamera(); btn.textContent = '📷 Start Camera'; return; }
     btn.textContent = 'Loading…';
-    await g.initGestures({ onLeft: goLeft, onRight: goRight, onUp: doJump, onDown: doSlide });
+    const g = await ensureGestures();
     await g.startCamera();
-    e.currentTarget.textContent = '⏹ Stop Camera';
+    btn.textContent = '⏹ Stop Camera';
     document.getElementById('gesture-badge').textContent = '✋ GESTURE LIVE';
     document.getElementById('gesture-badge').classList.add('live');
     if (state.mode !== 'playing') startGame();
