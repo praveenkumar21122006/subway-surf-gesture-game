@@ -781,6 +781,30 @@ document.getElementById('btn-cam-toggle').onclick = async (e) => {
 };
 document.getElementById('sens').oninput = async (e) => { try { (await loadGestures()).setSensitivity(+e.target.value); } catch {} };
 document.getElementById('chk-pos').onchange = async (e) => { try { (await loadGestures()).setPosControl(e.target.checked); } catch {} };
+document.getElementById('btn-diag').onclick = async () => {
+  const lines = [];
+  const log = (m) => { lines.push(m); setGestureStatus('🔍 ' + lines.join('<br/>')); };
+  log('protocol: ' + location.protocol + (window.isSecureContext ? ' (secure ✓)' : ' (NOT secure ✗)'));
+  log('browser: ' + (navigator.userAgent.match(/(Chrome|Edg|Firefox|Safari)\/[\d.]+/) || ['unknown'])[0]);
+  if (!navigator.mediaDevices?.getUserMedia) { log('✗ camera API missing — use Chrome/Edge over HTTPS'); return; }
+  log('✓ camera API present');
+  try {
+    const devs = await navigator.mediaDevices.enumerateDevices();
+    const cams = devs.filter((d) => d.kind === 'videoinput');
+    log('cameras seen: ' + cams.length + (cams.length ? ' (' + cams.map((c) => c.label || 'unnamed').join(', ') + ')' : ' ← NONE: Windows sees no webcam (privacy/Device Manager/BIOS)'));
+  } catch (e) { log('list-cameras failed: ' + e.name); }
+  try {
+    const s = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+    log('✓ camera opens (' + (s.getVideoTracks()[0]?.label || 'video') + ')');
+    s.getTracks().forEach((t) => t.stop());
+  } catch (e) { log('✗ camera blocked: ' + e.name + ' — ' + (e.message || '')); return; }
+  log('loading hand model…');
+  const t0 = performance.now();
+  try {
+    await ensureGestures(45000);
+    log('✓ model OK in ' + ((performance.now() - t0) / 1000).toFixed(1) + 's — now click Enable Camera & Play');
+  } catch (e) { log('✗ model failed: ' + String(e.message || e).split('\n')[0]); }
+};
 if (location.protocol === 'file:') {
   const st = document.getElementById('gesture-status');
   if (st) st.innerHTML = '⚠️ Opened via <b>file://</b> — keyboard works, but camera needs <b>http://localhost:8000</b>.<br/>Run <code>python -m http.server 8000</code> or double-click <b>start_game.bat</b>.';
